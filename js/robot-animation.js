@@ -45,9 +45,9 @@ class RobotAnimation {
 
         // Plant configurations
         this.trees = [
-            { x: 65, fruitPicked: false },
-            { x: 155, fruitPicked: false },
-            { x: 245, fruitPicked: false }
+            { x: 70, fruitPicked: false },
+            { x: 165, fruitPicked: false },
+            { x: 260, fruitPicked: false }
         ];
         this.currentTreeIndex = 0;
 
@@ -82,7 +82,7 @@ class RobotAnimation {
         this.crateY = this.floorY - 18;
 
         // Reset robot to starting target
-        this.robotX = this.trees[0].x + 60;
+        this.robotX = this.trees[0].x + 55;
     }
 
     // Solve Inverse Kinematics for a 2-segment arm
@@ -183,8 +183,8 @@ class RobotAnimation {
         this.timer++;
         this.updateParticles();
 
-        const chassisY = this.floorY - 32;
-        const armBaseY = chassisY + 4;
+        const chassisY = this.floorY - 12 - 26; // Sitting on wheels
+        const armBaseY = chassisY + 6;
 
         // Rest and carry target for single arm relative to base
         const restX = this.robotX;
@@ -194,21 +194,20 @@ class RobotAnimation {
 
         switch (this.state) {
             case 0: // Driving to Tree (Left/Center)
-                const targetTreeX = this.trees[this.currentTreeIndex].x + 60;
+                const targetTreeX = this.trees[this.currentTreeIndex].x + 55;
                 this.targetX = targetTreeX;
                 const dx0 = targetTreeX - this.robotX;
 
-                if (Math.abs(dx0) > 2) {
-                    const step = Math.sign(dx0) * driveSpeed;
+                if (Math.abs(dx0) > 1.5) {
+                    const speed = Math.max(0.5, Math.min(driveSpeed, Math.abs(dx0) * 0.15));
+                    const step = Math.sign(dx0) * speed;
                     this.robotX += step;
-                    this.wheelAngle += step / 10;
+                    this.wheelAngle += step / 12;
                     this.createDustParticles();
                 } else {
                     this.robotX = targetTreeX;
-                    if (this.timer > 15) {
-                        this.state = 1;
-                        this.timer = 0;
-                    }
+                    this.state = 1; // Arrived -> Scan fruit
+                    this.timer = 0;
                 }
 
                 // Arm rests in folded position during transit
@@ -216,18 +215,27 @@ class RobotAnimation {
                 this.setArmTarget(restX, restY);
                 break;
 
-            case 1: // Pick fruit from tree branch
+            case 1: // Scanning Target Fruit (Pause for planning)
+                this.arm.gripperOpen = true;
+                this.setArmTarget(restX, restY);
+                if (this.timer > 30) {
+                    this.state = 2; // Begin grasp reach
+                    this.timer = 0;
+                }
+                break;
+
+            case 2: // Reaching & Plucking Fruit
                 const targetTree = this.trees[this.currentTreeIndex];
                 const fruitX = targetTree.x - 8;
                 const fruitY = this.floorY - 52;
 
-                if (this.timer < 25) {
+                if (this.timer < 30) {
                     this.arm.gripperOpen = true;
                     this.setArmTarget(fruitX, fruitY);
-                } else if (this.timer < 40) {
-                    // Pluck / Grip fruit
+                } else if (this.timer < 50) {
+                    // Close gripper
                     this.arm.gripperOpen = false;
-                    targetTree.fruitPicked = true; // Fruit vanishes from tree canopy
+                    targetTree.fruitPicked = true; // Fruit vanishes
                     if (!this.currentCube) {
                         this.currentCube = {
                             x: fruitX,
@@ -237,64 +245,72 @@ class RobotAnimation {
                     }
                     this.setArmTarget(fruitX, fruitY);
                 } else {
-                    this.state = 2;
-                    this.timer = 0;
-                }
-                break;
-
-            case 2: // Retract arm to carry position
-                this.arm.gripperOpen = false;
-                this.setArmTarget(restX, restY);
-                if (this.timer > 20) {
                     this.state = 3;
                     this.timer = 0;
                 }
                 break;
 
-            case 3: // Driving to Crate (Right side)
-                const targetCrateRobotX = this.logicalWidth - 115;
-                this.targetX = targetCrateRobotX;
-                const dx3 = targetCrateRobotX - this.robotX;
+            case 3: // Retract arm to carry position
+                this.arm.gripperOpen = false;
+                this.setArmTarget(restX, restY);
+                if (this.timer > 25) {
+                    this.state = 4; // Start transit to crate
+                    this.timer = 0;
+                }
+                break;
 
-                if (Math.abs(dx3) > 2) {
-                    const step = Math.sign(dx3) * driveSpeed;
+            case 4: // Driving to Crate (Right side)
+                const targetCrateRobotX = this.logicalWidth - 110;
+                this.targetX = targetCrateRobotX;
+                const dx4 = targetCrateRobotX - this.robotX;
+
+                if (Math.abs(dx4) > 1.5) {
+                    const speed = Math.max(0.5, Math.min(driveSpeed, Math.abs(dx4) * 0.15));
+                    const step = Math.sign(dx4) * speed;
                     this.robotX += step;
-                    this.wheelAngle += step / 10;
+                    this.wheelAngle += step / 12;
                     this.createDustParticles();
                     
-                    // Arm carries fruit in folded position
+                    // Arm carries fruit in carry position
                     this.arm.gripperOpen = false;
                     this.setArmTarget(restX, restY);
                 } else {
                     this.robotX = targetCrateRobotX;
-                    if (this.timer > 15) {
-                        this.state = 4;
-                        this.timer = 0;
-                    }
+                    this.state = 5; // Arrived -> Scan Crate
+                    this.timer = 0;
                 }
                 break;
 
-            case 4: // Drop Fruit into crate
-                if (this.timer < 25) {
+            case 5: // Scanning Crate (Pause for planning)
+                this.arm.gripperOpen = false;
+                this.setArmTarget(restX, restY);
+                if (this.timer > 30) {
+                    this.state = 6; // Begin drop reach
+                    this.timer = 0;
+                }
+                break;
+
+            case 6: // Drop Fruit into crate
+                if (this.timer < 30) {
                     this.arm.gripperOpen = false;
                     this.setArmTarget(this.crateX, this.crateY);
-                } else if (this.timer < 45) {
+                } else if (this.timer < 55) {
                     this.arm.gripperOpen = true;
                     if (this.currentCube) {
                         this.currentCube = null;
                         this.stackCount++;
                     }
                     this.setArmTarget(this.crateX, this.crateY);
-                } else if (this.timer < 65) {
+                } else if (this.timer < 85) {
                     // Retract arm back to rest
                     this.setArmTarget(restX, restY);
                 } else {
-                    this.state = 5;
+                    this.state = 7;
                     this.timer = 0;
                 }
                 break;
 
-            case 5: // Reset Check / Next cycle
+            case 7: // Reset Check / Next cycle
                 this.arm.gripperOpen = true;
                 this.setArmTarget(restX, restY);
                 
@@ -366,33 +382,30 @@ class RobotAnimation {
     }
 
     drawRobot() {
-        const chassisW = 56;
-        const chassisH = 22;
-        const chassisY = this.floorY - 14 - chassisH;
+        const chassisW = 44;
+        const chassisH = 26;
+        const chassisY = this.floorY - 12 - chassisH;
 
-        // 1. Draw 4 wheels side-view rover (drawn with overlapping intervals)
-        // Wheel hubs offset horizontally
-        this.drawWheel(this.robotX - 22, this.floorY - 10, 10, this.wheelAngle);
-        this.drawWheel(this.robotX - 8, this.floorY - 10, 10, this.wheelAngle);
-        this.drawWheel(this.robotX + 8, this.floorY - 10, 10, this.wheelAngle);
-        this.drawWheel(this.robotX + 22, this.floorY - 10, 10, this.wheelAngle);
+        // 1. Draw 2 wheels (differential-drive balancing robot design)
+        this.drawWheel(this.robotX - 18, this.floorY - 12, 12, this.wheelAngle);
+        this.drawWheel(this.robotX + 18, this.floorY - 12, 12, this.wheelAngle);
 
         // 2. Draw Chassis Body
         this.ctx.fillStyle = '#1E1B4B';
         this.ctx.strokeStyle = this.colors.purple;
         this.ctx.lineWidth = 1.5;
         
-        this.drawRoundRect(this.robotX - chassisW/2, chassisY, chassisW, chassisH, 5);
+        this.drawRoundRect(this.robotX - chassisW/2, chassisY, chassisW, chassisH, 6);
         this.ctx.fill();
         this.ctx.stroke();
 
         // Glowing core
-        const corePulse = 2 + Math.abs(Math.sin(Date.now() / 150)) * 2;
+        const corePulse = 3 + Math.abs(Math.sin(Date.now() / 150)) * 2;
         this.ctx.shadowColor = this.colors.cyan;
         this.ctx.shadowBlur = 8;
         this.ctx.fillStyle = this.colors.cyan;
         this.ctx.beginPath();
-        this.ctx.arc(this.robotX, chassisY + chassisH/2, corePulse, 0, Math.PI * 2);
+        this.ctx.arc(this.robotX, chassisY + chassisH/2 - 2, corePulse, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.shadowBlur = 0; // Reset
 
@@ -401,9 +414,23 @@ class RobotAnimation {
         this.ctx.fillStyle = '#FFFFFF';
         this.ctx.textAlign = 'center';
         this.ctx.fillText('FEAR', this.robotX, chassisY + 8);
+        
+        // Small camera sensor mount (VLA eye) on top
+        this.ctx.fillStyle = '#09090B';
+        this.ctx.strokeStyle = this.colors.cyan;
+        this.ctx.lineWidth = 1.0;
+        this.ctx.beginPath();
+        this.ctx.rect(this.robotX - 6, chassisY - 6, 12, 6);
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        this.ctx.fillStyle = this.colors.cyan;
+        this.ctx.beginPath();
+        this.ctx.arc(this.robotX, chassisY - 3, 2, 0, Math.PI * 2);
+        this.ctx.fill();
 
         // 3. Draw Single Arm
-        const armBaseY = chassisY + 4;
+        const armBaseY = chassisY + 6;
         this.drawArm(this.arm, this.robotX, armBaseY, this.colors.cyan);
     }
 
@@ -621,6 +648,105 @@ class RobotAnimation {
         this.ctx.stroke();
     }
 
+    drawHUD() {
+        let stateLabel = '';
+        let queryText = '';
+        let telemetryAction = '';
+
+        switch (this.state) {
+            case 0:
+                stateLabel = 'NAV_TO_PICK';
+                queryText = `"Locate tree ${this.currentTreeIndex + 1} and navigate to harvest coordinate."`;
+                telemetryAction = Math.abs(this.targetX - this.robotX) > 2 ? 'DRIVING (2.2m/s)' : 'ALIGNING';
+                break;
+            case 1:
+                stateLabel = 'SCAN_OBJECT';
+                queryText = `"Run spatial scanning pipeline on targeted apple cluster."`;
+                telemetryAction = 'VLA INFERENCE...';
+                break;
+            case 2:
+                stateLabel = 'GRASP_OBJECT';
+                queryText = `"Move manipulator to target apple coordinate and grasp it."`;
+                telemetryAction = 'EXTENDING';
+                break;
+            case 3:
+                stateLabel = 'RETRACT_ARM';
+                queryText = `"Secure crop payload and retract arm to transit configuration."`;
+                telemetryAction = 'RETRACTING';
+                break;
+            case 4:
+                stateLabel = 'NAV_TO_CRATE';
+                queryText = `"Navigate to crop crate and align deposit vectors."`;
+                telemetryAction = Math.abs(this.targetX - this.robotX) > 2 ? 'DRIVING (2.2m/s)' : 'ALIGNING';
+                break;
+            case 5:
+                stateLabel = 'SCAN_CRATE';
+                queryText = `"Scan collection box coordinates for collision-free deposit path."`;
+                telemetryAction = 'VLA INFERENCE...';
+                break;
+            case 6:
+                stateLabel = 'DEPOSIT_OBJECT';
+                queryText = `"Extend manipulator and release apple at crate coordinate."`;
+                telemetryAction = 'DEPOSITING';
+                break;
+            case 7:
+                stateLabel = 'RESET_ARM';
+                queryText = `"Harvest cycle complete. Preparing spatial search query for next crop."`;
+                telemetryAction = 'FOLDING';
+                break;
+        }
+
+        // Draw top instruction box
+        this.ctx.save();
+        this.ctx.fillStyle = 'rgba(10, 10, 12, 0.75)';
+        this.ctx.strokeStyle = 'rgba(0, 240, 255, 0.25)';
+        this.ctx.lineWidth = 1.5;
+        this.drawRoundRect(10, 10, this.logicalWidth - 20, 32, 5);
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        // Instruction Header
+        this.ctx.font = '700 7px monospace';
+        this.ctx.fillStyle = this.colors.cyan;
+        this.ctx.textAlign = 'left';
+        this.ctx.fillText('EMBODIED VLA MODEL COMMAND INPUT', 18, 22);
+
+        // Instruction Query Text
+        this.ctx.font = '500 8.5px monospace';
+        this.ctx.fillStyle = '#FFFFFF';
+        this.ctx.fillText(queryText, 18, 34);
+
+        // Draw telemetry panel
+        this.ctx.fillStyle = 'rgba(10, 10, 12, 0.75)';
+        this.ctx.strokeStyle = 'rgba(0, 240, 255, 0.2)';
+        this.drawRoundRect(10, 50, 140, 70, 5);
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        // Telemetry Text lines
+        this.ctx.font = '700 7px monospace';
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        this.ctx.fillText('SYSTEM TELEMETRY', 18, 62);
+
+        this.ctx.fillStyle = '#FFFFFF';
+        this.ctx.font = '600 7px monospace';
+        this.ctx.fillText(`MODEL : ACT-MAMBA VLA`, 18, 72);
+        
+        this.ctx.fillStyle = this.colors.cyan;
+        this.ctx.fillText(`STATE : ${stateLabel}`, 18, 82);
+        
+        this.ctx.fillStyle = '#EAB308'; // yellow
+        this.ctx.fillText(`ACTION: ${telemetryAction}`, 18, 92);
+
+        this.ctx.fillStyle = '#FFFFFF';
+        this.ctx.fillText(`THETA : ${(this.arm.theta1 * 180 / Math.PI).toFixed(0)}°, ${(this.arm.theta2 * 180 / Math.PI).toFixed(0)}°`, 18, 102);
+
+        this.ctx.fillStyle = this.arm.gripperOpen ? '#22C55E' : '#EF4444';
+        this.ctx.fillText(`GRIP  : ${this.arm.gripperOpen ? 'OPEN' : 'CLOSED'}`, 18, 112);
+
+        this.ctx.restore();
+    }
+
     draw() {
         this.ctx.clearRect(0, 0, this.logicalWidth, this.logicalHeight);
 
@@ -649,7 +775,7 @@ class RobotAnimation {
 
         // 3. Draw Crate & Placed fruits
         let crateOpacity = 1.0;
-        if (this.state === 5 && this.stackCount >= 3) {
+        if (this.state === 7 && this.stackCount >= 3) {
             crateOpacity = Math.max(0.3, 1.0 - (this.timer / 50));
         }
         this.ctx.globalAlpha = crateOpacity;
@@ -667,13 +793,95 @@ class RobotAnimation {
         });
         this.ctx.globalAlpha = 1.0; // Reset
 
-        // 5. Draw Robot Rover
+        // 5. Draw Vision Target Bounding Box
+        if (this.state === 0 || this.state === 1 || this.state === 2) {
+            const targetTree = this.trees[this.currentTreeIndex];
+            const fx = targetTree.x - 8;
+            const fy = this.floorY - 52;
+            
+            this.ctx.save();
+            this.ctx.strokeStyle = '#22C55E';
+            this.ctx.lineWidth = 1;
+            this.ctx.setLineDash([2, 2]);
+            this.ctx.beginPath();
+            this.ctx.rect(fx - 8, fy - 8, 16, 16);
+            this.ctx.stroke();
+            
+            this.ctx.fillStyle = '#22C55E';
+            this.ctx.font = '600 7px monospace';
+            this.ctx.fillText('[Apple: 0.99]', fx - 8, fy - 11);
+            this.ctx.restore();
+        } else if (this.state === 4 || this.state === 5 || this.state === 6) {
+            const cx = this.crateX;
+            const cy = this.crateY;
+            
+            this.ctx.save();
+            this.ctx.strokeStyle = '#3B82F6';
+            this.ctx.lineWidth = 1;
+            this.ctx.setLineDash([2, 2]);
+            this.ctx.beginPath();
+            this.ctx.rect(cx - 20, cy - 2, 40, 22);
+            this.ctx.stroke();
+            
+            this.ctx.fillStyle = '#3B82F6';
+            this.ctx.font = '600 7px monospace';
+            this.ctx.fillText('[Crate: 0.98]', cx - 20, cy - 5);
+            this.ctx.restore();
+        }
+
+        // 6. Draw Camera Scanning Beam (Sensory Input)
+        const chassisH = 26;
+        const chassisY = this.floorY - 12 - chassisH;
+        const cameraX = this.robotX;
+        const cameraY = chassisY - 2;
+
+        if (this.state === 1) {
+            const targetTree = this.trees[this.currentTreeIndex];
+            const fx = targetTree.x - 8;
+            const fy = this.floorY - 52;
+            
+            this.ctx.save();
+            const scanGrad = this.ctx.createRadialGradient(cameraX, cameraY, 2, fx, fy, 40);
+            scanGrad.addColorStop(0, 'rgba(0, 240, 255, 0.4)');
+            scanGrad.addColorStop(1, 'rgba(0, 240, 255, 0.02)');
+            this.ctx.fillStyle = scanGrad;
+            
+            this.ctx.beginPath();
+            this.ctx.moveTo(cameraX, cameraY);
+            this.ctx.lineTo(fx - 12, fy - 12);
+            this.ctx.lineTo(fx + 12, fy + 12);
+            this.ctx.closePath();
+            this.ctx.fill();
+            this.ctx.restore();
+        } else if (this.state === 5) {
+            const fx = this.crateX;
+            const fy = this.crateY;
+            
+            this.ctx.save();
+            const scanGrad = this.ctx.createRadialGradient(cameraX, cameraY, 2, fx, fy, 40);
+            scanGrad.addColorStop(0, 'rgba(0, 240, 255, 0.4)');
+            scanGrad.addColorStop(1, 'rgba(0, 240, 255, 0.02)');
+            this.ctx.fillStyle = scanGrad;
+            
+            this.ctx.beginPath();
+            this.ctx.moveTo(cameraX, cameraY);
+            this.ctx.lineTo(fx - 20, fy - 5);
+            this.ctx.lineTo(fx + 20, fy - 5);
+            this.ctx.closePath();
+            this.ctx.fill();
+            this.ctx.restore();
+        }
+
+        // 7. Draw Robot Rover
         this.drawRobot();
 
-        // 6. Draw current fruit carried by arm
+        // 8. Draw current fruit carried by arm
         if (this.currentCube) {
             this.drawCube(this.currentCube.x, this.currentCube.y, this.currentCube.color);
         }
+
+        // 9. Draw VLA model interface HUD
+        this.drawHUD();
     }
 
     loop() {
