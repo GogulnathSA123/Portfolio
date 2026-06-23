@@ -51,19 +51,11 @@ class RobotAnimation {
         ];
         this.currentTreeIndex = 0;
 
-        // Left and Right Arms (2 DOF manipulators)
-        this.leftArm = {
-            theta1: -Math.PI / 4,
+        // Single central 2 DOF manipulator arm
+        this.arm = {
+            theta1: -Math.PI / 2,
             theta2: -Math.PI / 2,
-            targetTheta1: -Math.PI / 4,
-            targetTheta2: -Math.PI / 2,
-            gripperOpen: true
-        };
-
-        this.rightArm = {
-            theta1: -3 * Math.PI / 4,
-            theta2: -Math.PI / 2,
-            targetTheta1: -3 * Math.PI / 4,
+            targetTheta1: -Math.PI / 2,
             targetTheta2: -Math.PI / 2,
             gripperOpen: true
         };
@@ -145,21 +137,16 @@ class RobotAnimation {
         this.ctx.closePath();
     }
 
-    setArmTargets(ltx, lty, rtx, rty) {
+    setArmTarget(tx, ty) {
         const chassisY = this.floorY - 32;
         const armBaseY = chassisY + 4;
-        const baseLeftX = this.robotX - 16;
-        const baseRightX = this.robotX + 16;
+        const armBaseX = this.robotX;
 
-        if (ltx !== null && lty !== null) {
-            const lIK = this.solveIK(ltx, lty, baseLeftX, armBaseY, 1);
-            this.leftArm.targetTheta1 = lIK.theta1;
-            this.leftArm.targetTheta2 = lIK.theta2;
-        }
-        if (rtx !== null && rty !== null) {
-            const rIK = this.solveIK(rtx, rty, baseRightX, armBaseY, -1);
-            this.rightArm.targetTheta1 = rIK.theta1;
-            this.rightArm.targetTheta2 = rIK.theta2;
+        if (tx !== null && ty !== null) {
+            const flip = (tx < armBaseX) ? -1 : 1;
+            const ik = this.solveIK(tx, ty, armBaseX, armBaseY, flip);
+            this.arm.targetTheta1 = ik.theta1;
+            this.arm.targetTheta2 = ik.theta2;
         }
     }
 
@@ -198,14 +185,10 @@ class RobotAnimation {
 
         const chassisY = this.floorY - 32;
         const armBaseY = chassisY + 4;
-        const baseLeftX = this.robotX - 16;
-        const baseRightX = this.robotX + 16;
 
-        // Transit/Rest targets relative to arm bases
-        const rTransit = { x: this.robotX + 15, y: chassisY - 40 };
-        const lTransit = { x: this.robotX - 15, y: chassisY - 40 };
-        const rRest = { x: this.robotX + 22, y: chassisY - 18 };
-        const lRest = { x: this.robotX - 22, y: chassisY - 18 };
+        // Rest and carry target for single arm relative to base
+        const restX = this.robotX;
+        const restY = chassisY - 15;
 
         const driveSpeed = 2.2;
 
@@ -228,71 +211,47 @@ class RobotAnimation {
                     }
                 }
 
-                // Arms rest in compact positions during transit
-                this.rightArm.gripperOpen = true;
-                this.leftArm.gripperOpen = true;
-                this.setArmTargets(lRest.x, lRest.y, rRest.x, rRest.y);
+                // Arm rests in folded position during transit
+                this.arm.gripperOpen = true;
+                this.setArmTarget(restX, restY);
                 break;
 
-            case 1: // Pick fruit from tree branch (Right Arm reaches left)
-                this.leftArm.gripperOpen = true;
-                this.setArmTargets(lRest.x, lRest.y, null, null);
-
-                // Harvest coordinates (fruit is slightly left and high)
+            case 1: // Pick fruit from tree branch
                 const targetTree = this.trees[this.currentTreeIndex];
                 const fruitX = targetTree.x - 8;
                 const fruitY = this.floorY - 52;
 
                 if (this.timer < 25) {
-                    this.rightArm.gripperOpen = true;
-                    this.setArmTargets(null, null, fruitX, fruitY);
+                    this.arm.gripperOpen = true;
+                    this.setArmTarget(fruitX, fruitY);
                 } else if (this.timer < 40) {
-                    // Grip fruit
-                    this.rightArm.gripperOpen = false;
+                    // Pluck / Grip fruit
+                    this.arm.gripperOpen = false;
                     targetTree.fruitPicked = true; // Fruit vanishes from tree canopy
                     if (!this.currentCube) {
                         this.currentCube = {
                             x: fruitX,
                             y: fruitY,
-                            color: this.colors.red,
-                            heldBy: 'right'
+                            color: this.colors.red
                         };
                     }
-                } else if (this.timer < 60) {
-                    // Lift right arm
-                    this.setArmTargets(null, null, rTransit.x, rTransit.y);
+                    this.setArmTarget(fruitX, fruitY);
                 } else {
                     this.state = 2;
                     this.timer = 0;
                 }
                 break;
 
-            case 2: // Stationary Hand-off (at current tree location)
-                const handoffX = this.robotX;
-                const handoffY = chassisY - 45;
-
-                if (this.timer < 25) {
-                    this.leftArm.gripperOpen = true;
-                    this.setArmTargets(handoffX, handoffY, handoffX, handoffY);
-                } else if (this.timer < 40) {
-                    // Left arm grips fruit
-                    this.leftArm.gripperOpen = false;
-                    if (this.currentCube) {
-                        this.currentCube.heldBy = 'left';
-                    }
-                } else if (this.timer < 55) {
-                    // Right arm releases
-                    this.rightArm.gripperOpen = true;
-                } else if (this.timer < 75) {
-                    // Retract right arm, left arm keeps transit hold
-                    this.setArmTargets(lTransit.x, lTransit.y, rRest.x, rRest.y);
-                } else {
+            case 2: // Retract arm to carry position
+                this.arm.gripperOpen = false;
+                this.setArmTarget(restX, restY);
+                if (this.timer > 20) {
                     this.state = 3;
                     this.timer = 0;
                 }
                 break;
 
-            case 3: // Driving to Crate (Right, logicalWidth - 115)
+            case 3: // Driving to Crate (Right side)
                 const targetCrateRobotX = this.logicalWidth - 115;
                 this.targetX = targetCrateRobotX;
                 const dx3 = targetCrateRobotX - this.robotX;
@@ -302,9 +261,10 @@ class RobotAnimation {
                     this.robotX += step;
                     this.wheelAngle += step / 10;
                     this.createDustParticles();
-
-                    // Left arm holds, right arm rests
-                    this.setArmTargets(lTransit.x, lTransit.y, rRest.x, rRest.y);
+                    
+                    // Arm carries fruit in folded position
+                    this.arm.gripperOpen = false;
+                    this.setArmTarget(restX, restY);
                 } else {
                     this.robotX = targetCrateRobotX;
                     if (this.timer > 15) {
@@ -314,22 +274,20 @@ class RobotAnimation {
                 }
                 break;
 
-            case 4: // Drop Fruit into crate (Left arm places)
-                this.rightArm.gripperOpen = true;
-                this.setArmTargets(null, null, rRest.x, rRest.y);
-
+            case 4: // Drop Fruit into crate
                 if (this.timer < 25) {
-                    this.leftArm.gripperOpen = false;
-                    this.setArmTargets(this.crateX, this.crateY, null, null);
+                    this.arm.gripperOpen = false;
+                    this.setArmTarget(this.crateX, this.crateY);
                 } else if (this.timer < 45) {
-                    this.leftArm.gripperOpen = true;
+                    this.arm.gripperOpen = true;
                     if (this.currentCube) {
                         this.currentCube = null;
                         this.stackCount++;
                     }
+                    this.setArmTarget(this.crateX, this.crateY);
                 } else if (this.timer < 65) {
-                    // Retract left arm to rest
-                    this.setArmTargets(lRest.x, lRest.y, null, null);
+                    // Retract arm back to rest
+                    this.setArmTarget(restX, restY);
                 } else {
                     this.state = 5;
                     this.timer = 0;
@@ -337,11 +295,11 @@ class RobotAnimation {
                 break;
 
             case 5: // Reset Check / Next cycle
-                this.setArmTargets(lRest.x, lRest.y, rRest.x, rRest.y);
+                this.arm.gripperOpen = true;
+                this.setArmTarget(restX, restY);
                 
                 if (this.stackCount >= 3) {
                     if (this.timer > 50) {
-                        // Empty crate and grow back fruits on trees
                         this.stackCount = 0;
                         this.trees.forEach(tree => tree.fruitPicked = false);
                         this.currentTreeIndex = 0;
@@ -349,7 +307,6 @@ class RobotAnimation {
                         this.timer = 0;
                     }
                 } else {
-                    // Select next tree to pick
                     this.currentTreeIndex = (this.currentTreeIndex + 1) % this.trees.length;
                     this.state = 0;
                     this.timer = 0;
@@ -357,25 +314,17 @@ class RobotAnimation {
                 break;
         }
 
-        // Attach fruit coordinates to appropriate hand
+        // Attach fruit coordinates to arm hand
         if (this.currentCube) {
-            if (this.currentCube.heldBy === 'right') {
-                const joints = this.solveFK(this.rightArm, baseRightX, armBaseY);
-                this.currentCube.x = joints.x2;
-                this.currentCube.y = joints.y2;
-            } else {
-                const joints = this.solveFK(this.leftArm, baseLeftX, armBaseY);
-                this.currentCube.x = joints.x2;
-                this.currentCube.y = joints.y2;
-            }
+            const joints = this.solveFK(this.arm, this.robotX, armBaseY);
+            this.currentCube.x = joints.x2;
+            this.currentCube.y = joints.y2;
         }
 
         // Smoothly interpolate angles
         const lerpSpeed = 0.15;
-        this.leftArm.theta1 += (this.leftArm.targetTheta1 - this.leftArm.theta1) * lerpSpeed;
-        this.leftArm.theta2 += (this.leftArm.targetTheta2 - this.leftArm.theta2) * lerpSpeed;
-        this.rightArm.theta1 += (this.rightArm.targetTheta1 - this.rightArm.theta1) * lerpSpeed;
-        this.rightArm.theta2 += (this.rightArm.targetTheta2 - this.rightArm.theta2) * lerpSpeed;
+        this.arm.theta1 += (this.arm.targetTheta1 - this.arm.theta1) * lerpSpeed;
+        this.arm.theta2 += (this.arm.targetTheta2 - this.arm.theta2) * lerpSpeed;
     }
 
     drawWheel(cx, cy, r, angle) {
@@ -453,10 +402,9 @@ class RobotAnimation {
         this.ctx.textAlign = 'center';
         this.ctx.fillText('FEAR', this.robotX, chassisY + 8);
 
-        // 3. Draw Arms
+        // 3. Draw Single Arm
         const armBaseY = chassisY + 4;
-        this.drawArm(this.leftArm, this.robotX - 16, armBaseY, this.colors.cyan);
-        this.drawArm(this.rightArm, this.robotX + 16, armBaseY, this.colors.purple);
+        this.drawArm(this.arm, this.robotX, armBaseY, this.colors.cyan);
     }
 
     drawArm(arm, baseX, baseY, accentColor) {
