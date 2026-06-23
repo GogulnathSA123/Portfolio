@@ -51,7 +51,7 @@
                 <li><a href="#education" class="nav-link"><span class="nav-number">04.</span> Education</a></li>
                 <li><a href="#certifications" class="nav-link"><span class="nav-number">05.</span> Certs</a></li>
                 <li><a href="#contact" class="nav-link"><span class="nav-number">06.</span> Contact</a></li>
-               <li><a href="#" class="nav-btn">Resume</a></li>
+               <li><a href="assets/Gogulnath_CV_new.pdf" class="nav-btn" target="_blank">Resume</a></li>
             </ul>
         </div>
     </nav>
@@ -69,14 +69,13 @@
             </div>
             <div class="hero-cta">
                 <a href="#projects" class="btn btn-primary">View Projects</a>
-                <a href="https://raw.githubusercontent.com/GogulnathSA123/Portfolio/main/assets/Gogulnath_CV_new.pdf
-" class="btn btn-outline">Download CV</a>
+                <a href="assets/Gogulnath_CV_new.pdf" class="btn btn-outline" target="_blank">Download CV</a>
             </div>
             <div class="hero-socials">
                 <a href="https://github.com/GogulnathSA123" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="GitHub">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
                 </a>
-                <a href="https://linkedin.com/in/" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="LinkedIn">
+                <a href="https://www.linkedin.com/in/gogulnathsa/" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="LinkedIn">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
                 </a>
                 <a href="mailto:gogulnathsa2001@gmail.com" class="social-link" aria-label="Email">
@@ -138,7 +137,115 @@
             <h2 class="section-title reveal"><span class="section-number">03.</span> Featured Projects</h2>
             <div class="projects-grid reveal-stagger">
 
-                <!-- Project 1: Bayesian Leader-Follower Robot -->
+                <!-- Project 1: VLA in HITL (MSc Research Project) -->
+                <div class="project-card">
+                    <div class="project-image">
+                        <img src="assets/vla_simulation.jpg" alt="Robotic Arm training in Nvidia Isaac Sim" class="project-img">
+                    </div>
+                    <div class="project-content">
+                        <h3 class="project-title">Vision-Language-Action in Hardware-in-the-Loop</h3>
+                        <p class="project-description">
+                            Ongoing MSc Research Project designing an end-to-end pipeline architecture to deploy Vision-Language-Action (VLA) models onto a physical SO-101 robot arm. Implements reinforcement learning experiments in Nvidia Isaac Sim/Isaac Lab, investigating sim-to-real transfer and physics-based integration using Nvidia Newton.
+                        </p>
+                        <div class="project-tags">
+                            <span class="tag">Python</span>
+                            <span class="tag">PyTorch</span>
+                            <span class="tag">ROS2</span>
+                            <span class="tag">Isaac Sim</span>
+                            <span class="tag">Isaac Lab</span>
+                            <span class="tag">Nvidia Newton</span>
+                            <span class="tag">SO-101 Arm</span>
+                        </div>
+                        <div class="project-links">
+                            <a href="https://github.com/GogulnathSA123/Portfolio" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                                <span>View Repo</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 2: Robot Learning Control (DMPs & GMR) -->
+                <div class="project-card">
+                    <div class="project-image">
+                        <img src="assets/robot_learning_dmp.jpg" alt="KUKA Robot arm tracking generalized trajectory" class="project-img">
+                    </div>
+                    <div class="project-content">
+                        <h3 class="project-title">Robot Learning: Teaching by Demonstration</h3>
+                        <p class="project-description">
+                            Implemented a Teaching by Demonstration (TbD) framework for a robotic manipulator. Preprocessed multiple human demonstrations of a trajectory and modeled the movement as a nonlinear dynamical system using Dynamic Movement Primitives (DMPs). Fused and generalized demonstrations using GMM and Gaussian Mixture Regression (GMR) to achieve smooth, robust trajectory planning in 3D workspace.
+                        </p>
+                        <div class="project-tags">
+                            <span class="tag">MATLAB</span>
+                            <span class="tag">Simulink</span>
+                            <span class="tag">DMPs</span>
+                            <span class="tag">GMM</span>
+                            <span class="tag">GMR</span>
+                            <span class="tag">KUKA LBR iiwa</span>
+                        </div>
+                        <div class="project-links">
+                            <a href="https://github.com/GogulnathSA123/Portfolio" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                                <span>View Repo</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 3: NAO HRI Study -->
+                <div class="project-card">
+                    <div class="project-image">
+                        <img src="assets/nao_hri_study.jpg" alt="NAO humanoid robot pointing at navigation target" class="project-img">
+                    </div>
+                    <div class="project-content">
+                        <h3 class="project-title">NAO HRI: Multimodal Route Guidance</h3>
+                        <p class="project-description">
+                            Co-designed and conducted a within-subjects user study with 8 participants to analyze the cognitive impact of robot non-verbal behavior on navigation memory. Calibrated deictic pointing gestures and head-gaze behaviors on a NAO humanoid robot to deliver complex 8-step routes. Built an evaluation pipeline utilizing the Longest Common Subsequence (LCS) algorithm to measure recall accuracy.
+                        </p>
+                        <div class="project-tags">
+                            <span class="tag">Python</span>
+                            <span class="tag">NAO Robot</span>
+                            <span class="tag">Choregraphe</span>
+                            <span class="tag">Hypothesis Testing</span>
+                            <span class="tag">LCS Algorithm</span>
+                            <span class="tag">User Studies</span>
+                        </div>
+                        <div class="project-links">
+                            <a href="https://github.com/GogulnathSA123/Portfolio" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                                <span>View Repo</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 4: Indoor Drone Localization -->
+                <div class="project-card">
+                    <div class="project-image">
+                        <img src="assets/drone_localization.jpg" alt="Drone hovering inside robotics lab with ArUco markers" class="project-img">
+                    </div>
+                    <div class="project-content">
+                        <h3 class="project-title">Indoor Drone Localization</h3>
+                        <p class="project-description">
+                            Developed an indoor localization system for drones to support mobile cable-driven parallel manipulators. Calibrated cameras and integrated onboard components to detect ArUco markers, enabling indoor drone localization without GPS. Verified performance in various flight modes including Guided and Stabilize in custom simulated environments.
+                        </p>
+                        <div class="project-tags">
+                            <span class="tag">ArUco Markers</span>
+                            <span class="tag">Camera Calibration</span>
+                            <span class="tag">Drone Construction</span>
+                            <span class="tag">SITL / Simulation</span>
+                            <span class="tag">Flight Testing</span>
+                        </div>
+                        <div class="project-links">
+                            <a href="https://github.com/GogulnathSA123/Portfolio" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                                <span>View Repo</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 5: Bayesian Leader-Follower Robot -->
                 <div class="project-card">
                     <div class="project-image">
                         <img src="assets/0J11370.600.webp" alt="Turtlebot Leader and Follower" class="project-img">
@@ -165,7 +272,7 @@
                     </div>
                 </div>
 
-                <!-- Project 2: Apple Detection SVM -->
+                <!-- Project 6: Apple Detection SVM -->
                 <div class="project-card">
                     <div class="project-image">
                         <img src="https://github.com/user-attachments/assets/73ef524a-b9a9-4e24-8d20-9036f5759538" alt="Apple Detection results showing bounding boxes around detected apples" class="project-img">
@@ -185,60 +292,6 @@
                         </div>
                         <div class="project-links">
                             <a href="https://github.com/GogulnathSA123/Apple-Detection-Using-Support-Vector-Machine-Algorithm" target="_blank" rel="noopener noreferrer" class="project-link">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
-                                <span>View Code</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Project 3: TurtleBot3 SLAM -->
-                <div class="project-card">
-                    <div class="project-image">
-                        <img src="assets/turtlebot3-burger-mobile-robot.webp" alt="TurtleBo3 Slam Implementation" class="project-img">
-                    
-                    </div>
-                    <div class="project-content">
-                        <h3 class="project-title">TurtleBot3 SLAM & Navigation</h3>
-                        <p class="project-description">
-                            Full ROS1 catkin workspace implementing real-time 2D SLAM using LiDAR-based Gmapping (Rao-Blackwellized Particle Filter). Includes differential drive control, Kalman filter localization, TF frame integration, joystick teleoperation, camera/LiDAR perception, and occupancy grid mapping in custom Gazebo environments.
-                        </p>
-                        <div class="project-tags">
-                            <span class="tag">ROS</span>
-                            <span class="tag">Gazebo</span>
-                            <span class="tag">SLAM</span>
-                            <span class="tag">Kalman Filter</span>
-                            <span class="tag">LiDAR</span>
-                            <span class="tag">C++</span>
-                            <span class="tag">Python</span>
-                        </div>
-                        <div class="project-links">
-                            <a href="https://github.com/GogulnathSA123/Turtlebot3_Problems" target="_blank" rel="noopener noreferrer" class="project-link">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
-                                <span>View Code</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Project 4: LeetCode -->
-                <div class="project-card">
-                    <div class="project-image">
-                        <img src="assets/wp14289995.webp" alt="LeetCodeSolutions" class="project-img">
-                    </div>
-                    <div class="project-content">
-                        <h3 class="project-title">LeetCode Solutions</h3>
-                        <p class="project-description">
-                            A growing collection of algorithmic problem solutions implemented in both Python and C++. Currently featuring classic problems like Two Sum with brute-force and optimized approaches. Building a strong foundation in data structures and algorithms.
-                        </p>
-                        <div class="project-tags">
-                            <span class="tag">Python</span>
-                            <span class="tag">C++</span>
-                            <span class="tag">Algorithms</span>
-                            <span class="tag">Data Structures</span>
-                        </div>
-                        <div class="project-links">
-                            <a href="https://github.com/GogulnathSA123/Leetcode_Problems" target="_blank" rel="noopener noreferrer" class="project-link">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
                                 <span>View Code</span>
                             </a>
@@ -367,22 +420,30 @@
         <div class="container">
             <h2 class="section-title reveal"><span class="section-number">06.</span> Certifications</h2>
             <div class="certs-grid reveal-stagger">
-                <a href="assets/cert-robotics.pdf" target="_blank" rel="noopener noreferrer" class="cert-card">
+                <div class="cert-card">
                     <div class="cert-icon">
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
                     </div>
-                    <h3 class="cert-title">ROS for Beginners: Robotics Course</h3>
+                    <h3 class="cert-title">Self Driving and ROS 2 – Learn by Doing: Odometry and Control</h3>
                     <p class="cert-issuer">Udemy</p>
-                    <span class="cert-date">March 2025</span>
-                </a>
-                <a href="assets/cert-ml.pdf" target="_blank" rel="noopener noreferrer" class="cert-card">
+                    <span class="cert-date">2024</span>
+                </div>
+                <div class="cert-card">
                     <div class="cert-icon">
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
                     </div>
-                    <h3 class="cert-title">Advanced Kalman Filtering & Sensor Fusion</h3>
+                    <h3 class="cert-title">Advanced Kalman Filtering and Sensor Fusion</h3>
                     <p class="cert-issuer">Udemy</p>
-                    <span class="cert-date">August 2025</span>
-                </a>
+                    <span class="cert-date">2024</span>
+                </div>
+                <div class="cert-card">
+                    <div class="cert-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                    </div>
+                    <h3 class="cert-title">IELTS Academic English Proficiency (Band 6.5)</h3>
+                    <p class="cert-issuer">British Council / IDP</p>
+                    <span class="cert-date">2024</span>
+                </div>
             </div>
         </div>
     </section>

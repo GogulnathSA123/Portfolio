@@ -155,5 +155,5 @@ contactForm.addEventListener('submit', (e) => {
     // Open mailto as a fallback
     const subject = encodeURIComponent(`Portfolio Contact from ${name}`);
     const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`);
-    window.location.href = `mailto:gogulnath@example.com?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:gogulnathsa2001@gmail.com?subject=${subject}&body=${body}`;
 });
