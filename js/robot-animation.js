@@ -43,6 +43,12 @@ class RobotAnimation {
         this.currentCube = null;  // Fruit in transit
         this.particles = [];      // Dust particles
 
+        // Human parameters for retrieval animation
+        this.humanX = 0;
+        this.humanWalkCycle = 0;
+        this.humanActive = false;
+        this.humanVx = 0;
+
         // Plant configurations
         this.trees = [
             { x: 70, fruitPicked: false },
@@ -315,15 +321,65 @@ class RobotAnimation {
                 this.setArmTarget(restX, restY);
                 
                 if (this.stackCount >= 3) {
-                    if (this.timer > 50) {
-                        this.stackCount = 0;
-                        this.trees.forEach(tree => tree.fruitPicked = false);
-                        this.currentTreeIndex = 0;
-                        this.state = 0;
-                        this.timer = 0;
-                    }
+                    // Crate is full -> Transition to Human Retrieval
+                    this.humanX = this.logicalWidth + 30;
+                    this.humanWalkCycle = 0;
+                    this.humanActive = true;
+                    this.humanVx = -1.2;
+                    this.state = 8;
+                    this.timer = 0;
                 } else {
                     this.currentTreeIndex = (this.currentTreeIndex + 1) % this.trees.length;
+                    this.state = 0;
+                    this.timer = 0;
+                }
+                break;
+
+            case 8: // Human walking in to retrieve crate
+                this.arm.gripperOpen = true;
+                this.setArmTarget(restX, restY);
+
+                this.humanVx = -1.2;
+                this.humanX += this.humanVx;
+                this.humanWalkCycle += 0.12;
+
+                if (this.humanX <= this.crateX) {
+                    this.humanX = this.crateX;
+                    this.state = 9;
+                    this.timer = 0;
+                }
+                break;
+
+            case 9: // Human picking up crate (0.5s pause to lift)
+                this.arm.gripperOpen = true;
+                this.setArmTarget(restX, restY);
+
+                if (this.timer > 30) {
+                    this.state = 10;
+                    this.timer = 0;
+                }
+                break;
+
+            case 10: // Human walking out carrying crate
+                this.arm.gripperOpen = true;
+                this.setArmTarget(restX, restY);
+
+                this.humanVx = 1.2;
+                this.humanX += this.humanVx;
+                this.humanWalkCycle += 0.12;
+
+                // Crate tracks the human
+                this.crateX = this.humanX;
+                this.crateY = this.floorY - 24; // Lifted up to hand height
+
+                if (this.humanX >= this.logicalWidth + 30) {
+                    // Reset environment and loop
+                    this.humanActive = false;
+                    this.stackCount = 0;
+                    this.trees.forEach(tree => tree.fruitPicked = false);
+                    this.currentTreeIndex = 0;
+                    this.crateX = this.logicalWidth - 55;
+                    this.crateY = this.floorY - 18;
                     this.state = 0;
                     this.timer = 0;
                 }
@@ -604,6 +660,95 @@ class RobotAnimation {
         }
     }
 
+    drawHuman() {
+        const hipX = this.humanX;
+        const hipY = this.floorY - 16;
+        const headY = this.floorY - 42;
+        const shoulderY = this.floorY - 34;
+
+        // Walk cycle leg/arm swings
+        const legSwing = Math.sin(this.humanWalkCycle) * 0.35;
+        const armSwing = Math.cos(this.humanWalkCycle) * 0.35;
+        const dir = Math.sign(this.humanVx || -1);
+
+        // 1. Draw Head
+        this.ctx.fillStyle = '#E4E4E7';
+        this.ctx.beginPath();
+        this.ctx.arc(this.humanX, headY, 5, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Cybernetic visor (cyan)
+        this.ctx.fillStyle = this.colors.cyan;
+        this.ctx.beginPath();
+        this.ctx.arc(this.humanX + dir * 3, headY - 1, 1.5, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // 2. Draw Torso
+        this.ctx.strokeStyle = '#A1A1AA';
+        this.ctx.lineWidth = 3;
+        this.ctx.lineCap = 'round';
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.humanX, shoulderY);
+        this.ctx.lineTo(hipX, hipY);
+        this.ctx.stroke();
+
+        // 3. Draw Legs
+        const legLength = 16;
+        
+        // Left Leg
+        const lAngle = (this.state === 8 || this.state === 10) ? legSwing : 0;
+        const lFootX = hipX + Math.sin(lAngle) * legLength;
+        const lFootY = hipY + Math.cos(lAngle) * legLength;
+        this.ctx.strokeStyle = '#A1A1AA';
+        this.ctx.lineWidth = 3;
+        this.ctx.beginPath();
+        this.ctx.moveTo(hipX, hipY);
+        this.ctx.lineTo(lFootX, lFootY);
+        this.ctx.stroke();
+
+        // Right Leg
+        const rAngle = (this.state === 8 || this.state === 10) ? -legSwing : 0;
+        const rFootX = hipX + Math.sin(rAngle) * legLength;
+        const rFootY = hipY + Math.cos(rAngle) * legLength;
+        this.ctx.beginPath();
+        this.ctx.moveTo(hipX, hipY);
+        this.ctx.lineTo(rFootX, rFootY);
+        this.ctx.stroke();
+
+        // 4. Draw Arms
+        const armLength = 12;
+        this.ctx.strokeStyle = '#D4D4D8';
+        this.ctx.lineWidth = 2.5;
+
+        if (this.state === 9 || this.state === 10) {
+            // Reaching out to hold crate
+            const handX = this.humanX + dir * 8;
+            const handY = this.floorY - 24; // level with carrying crate height
+
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.humanX, shoulderY);
+            this.ctx.lineTo(handX, handY);
+            this.ctx.stroke();
+        } else {
+            // Walking arm swing
+            const lArmAngle = armSwing;
+            const lHandX = this.humanX + Math.sin(lArmAngle) * armLength;
+            const lHandY = shoulderY + Math.cos(lArmAngle) * armLength;
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.humanX, shoulderY);
+            this.ctx.lineTo(lHandX, lHandY);
+            this.ctx.stroke();
+
+            const rArmAngle = -armSwing;
+            const rHandX = this.humanX + Math.sin(rArmAngle) * armLength;
+            const rHandY = shoulderY + Math.cos(rArmAngle) * armLength;
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.humanX, shoulderY);
+            this.ctx.lineTo(rHandX, rHandY);
+            this.ctx.stroke();
+        }
+    }
+
     drawTree(treeX) {
         const py = this.floorY;
 
@@ -690,9 +835,24 @@ class RobotAnimation {
                 telemetryAction = 'DEPOSITING';
                 break;
             case 7:
-                stateLabel = 'RESET_ARM';
-                queryText = `"Harvest cycle complete. Preparing spatial search query for next crop."`;
-                telemetryAction = 'FOLDING';
+                stateLabel = 'RESET_CHECK';
+                queryText = `"Evaluating crop collection payload status and capacities."`;
+                telemetryAction = 'COMPUTING';
+                break;
+            case 8:
+                stateLabel = 'WAIT_FOR_HUMAN';
+                queryText = `"Container capacity reached. Dispatched human operator to retrieve crop crate."`;
+                telemetryAction = 'STANDBY';
+                break;
+            case 9:
+                stateLabel = 'HUMAN_CONTACT';
+                queryText = `"Operator detected in workspace. Actuators locked. Suspending all autonomous drive."`;
+                telemetryAction = 'LOCKDOWN';
+                break;
+            case 10:
+                stateLabel = 'CROP_EXTRACTED';
+                queryText = `"Crop crate successfully extracted. Awaiting operator exit and environment reset."`;
+                telemetryAction = 'STANDBY';
                 break;
         }
 
@@ -878,6 +1038,11 @@ class RobotAnimation {
         // 8. Draw current fruit carried by arm
         if (this.currentCube) {
             this.drawCube(this.currentCube.x, this.currentCube.y, this.currentCube.color);
+        }
+
+        // Draw Human Operator if active
+        if (this.humanActive) {
+            this.drawHuman();
         }
 
         // 9. Draw VLA model interface HUD
