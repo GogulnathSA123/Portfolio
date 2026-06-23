@@ -383,22 +383,6 @@ class RobotAnimation {
     draw() {
         this.ctx.clearRect(0, 0, this.logicalWidth, this.logicalHeight);
 
-        // Draw grid background helper lines (matching body grid)
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
-        this.ctx.lineWidth = 1;
-        const gridSize = 30;
-        for (let x = 0; x < this.logicalWidth; x += gridSize) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.logicalHeight);
-            this.ctx.stroke();
-        }
-        for (let y = 0; y < this.logicalHeight; y += gridSize) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.logicalWidth, y);
-            this.ctx.stroke();
-        }
 
         // Draw Trajectory Parabolic Guide (dotted)
         if (this.state === 2) {
