@@ -23,25 +23,24 @@ class RobotAnimation {
         // Kinematics and visual settings (at base scale 1.0)
         this.armL1 = 44; 
         this.armL2 = 38; 
-        this.cubeSize = 16;
+        this.cubeSize = 10; // size of the picked fruit
         
         this.colors = {
             cyan: '#00F0FF',
             purple: '#A855F7',
-            orange: '#F97316',
+            red: '#EF4444',     // Red fruit color
             bg: '#0A0A0A',
-            border: '#27272A',
+            border: '#142918',  // Dark green border
             grid: '#1F2937'
         };
 
         // Perspective settings
-        this.z = 0.8;             // Depth coordinate (ranges from 0.25 to 0.8)
+        this.z = 0.8;             // Depth coordinate (ranges from 0.28 to 0.82)
         this.wheelAngle = 0;
-        this.state = 0;           // 0: Drive backward, 1: Pick cube, 2: Drive center & hand-off, 3: Drive forward, 4: Place cube, 5: Reset stack
+        this.state = 0;           // 0: Drive backward, 1: Pick fruit, 2: Drive center & hand-off, 3: Drive forward, 4: Place fruit in box, 5: Reset crate
         this.timer = 0;
-        this.stackCount = 0;
-        this.cubes = [];          // Stacked cubes
-        this.currentCube = null;  // Cube in transit
+        this.stackCount = 0;      // Collected fruits count
+        this.currentCube = null;  // Fruit in transit
         this.particles = [];      // Dust particles
 
         // Left and Right Arms (2 DOF manipulators)
@@ -74,8 +73,8 @@ class RobotAnimation {
         this.canvas.height = this.height;
         this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
         
-        this.logicalWidth = rect.width;
-        this.logicalHeight = rect.height;
+        this.logicalWidth = rect.width || 450;
+        this.logicalHeight = rect.height || 350;
 
         // Vanishing point coordinates for warehouse perspective
         this.vpX = this.logicalWidth * 0.5;
@@ -86,11 +85,14 @@ class RobotAnimation {
         this.zDrop = 0.82;
 
         const floorY = (z) => this.vpY + (this.logicalHeight * 0.95 - this.vpY) * z;
-        this.supplyX = this.vpX - 55 * this.zPick;
-        this.supplyY = floorY(this.zPick) - 5;
+        
+        // Supply fruit hangs on Left Canopy branch in background
+        this.supplyX = this.vpX - 35 * this.zPick;
+        this.supplyY = floorY(this.zPick) - 34 * this.zPick;
 
-        this.stackX = this.vpX + 60 * this.zDrop;
-        this.stackBaseY = floorY(this.zDrop) - 5;
+        // Collection bin sits on Right Aisle floor in foreground
+        this.boxX = this.vpX + 45 * this.zDrop;
+        this.boxY = floorY(this.zDrop) - 10 * this.zDrop;
     }
 
     // Solve Inverse Kinematics for a 2-segment arm (normalized to unscaled space)
@@ -222,7 +224,7 @@ class RobotAnimation {
                 this.setArmTargetsNormalized(lRest.x, lRest.y, rRest.x, rRest.y);
                 break;
 
-            case 1: // Pick Cube from Supply Shelf (Right arm reaches)
+            case 1: // Pick Fruit from branch canopy (Right arm reaches)
                 this.leftArm.gripperOpen = true;
                 this.setArmTargetsNormalized(lRest.x, lRest.y, null, null);
 
@@ -239,12 +241,12 @@ class RobotAnimation {
                         this.currentCube = {
                             x: this.supplyX,
                             y: this.supplyY,
-                            color: this.colors.orange,
+                            color: this.colors.red,
                             heldBy: 'right'
                         };
                     }
                 } else if (this.timer < 60) {
-                    // Lift right arm
+                    // Lift right arm with fruit
                     this.setArmTargetsNormalized(null, null, rTransit.x, rTransit.y);
                 } else {
                     this.state = 2;
@@ -252,7 +254,7 @@ class RobotAnimation {
                 }
                 break;
 
-            case 2: // Drive forward to Center (z = 0.55) & Hand-off
+            case 2: // Drive forward to Center (z = 0.53) & Hand-off
                 const zCenter = 0.53;
                 if (this.z < zCenter) {
                     this.z += driveSpeedZ;
@@ -290,13 +292,13 @@ class RobotAnimation {
                 }
                 break;
 
-            case 3: // Drive forward to Stack (Foreground, z = 0.8)
+            case 3: // Drive forward to Drop Zone (Foreground, z = 0.82)
                 if (this.z < this.zDrop) {
                     this.z += driveSpeedZ;
                     this.wheelAngle += 0.06;
                     this.createDustParticles();
-                    
-                    // Left arm holds, right arm rests
+
+                    // Left arm holds fruit, right arm rests
                     this.setArmTargetsNormalized(lTransit.x, lTransit.y, rRest.x, rRest.y);
                 } else {
                     this.z = this.zDrop;
@@ -307,32 +309,26 @@ class RobotAnimation {
                 }
                 break;
 
-            case 4: // Place Cube on Foreground Stack (Left arm places)
+            case 4: // Drop Fruit in box/crate (Left arm places)
                 this.rightArm.gripperOpen = true;
                 this.setArmTargetsNormalized(null, null, rRest.x, rRest.y);
 
-                // Target height based on stackCount
-                const targetY = this.stackBaseY - (this.stackCount * (this.cubeSize + 2) * scale);
-                const lxRelPlace = (this.stackX - baseLeftX) / scale;
-                const lyRelPlace = (targetY - baseLeftY) / scale;
+                // Place fruit over the crate
+                const lxRelPlace = (this.boxX - baseLeftX) / scale;
+                const lyRelPlace = (this.boxY - 4 * scale - baseLeftY) / scale;
 
                 if (this.timer < 25) {
                     this.leftArm.gripperOpen = false;
                     this.setArmTargetsNormalized(lxRelPlace, lyRelPlace, null, null);
                 } else if (this.timer < 45) {
+                    // Release fruit
                     this.leftArm.gripperOpen = true;
                     if (this.currentCube) {
-                        this.cubes.push({
-                            x: this.stackX,
-                            y: targetY,
-                            color: this.currentCube.color,
-                            scale: scale
-                        });
                         this.currentCube = null;
                         this.stackCount++;
                     }
                 } else if (this.timer < 65) {
-                    // Retract left arm
+                    // Retract left arm to rest
                     this.setArmTargetsNormalized(lRest.x, lRest.y, null, null);
                 } else {
                     this.state = 5;
@@ -340,11 +336,10 @@ class RobotAnimation {
                 }
                 break;
 
-            case 5: // Reset Stack / Wait
+            case 5: // Reset bin / Wait
                 this.setArmTargetsNormalized(lRest.x, lRest.y, rRest.x, rRest.y);
                 if (this.stackCount >= 3) {
-                    if (this.timer > 45) {
-                        this.cubes = [];
+                    if (this.timer > 50) {
                         this.stackCount = 0;
                         this.state = 0;
                         this.timer = 0;
@@ -377,23 +372,23 @@ class RobotAnimation {
         this.rightArm.theta2 += (this.rightArm.targetTheta2 - this.rightArm.theta2) * lerpSpeed;
     }
 
-    drawWarehouse() {
-        // Warehouse aisle depth background gradient
+    drawFarmingScene() {
+        // Floor soil gradient (dark agtech greenhouse theme)
         const floorGrad = this.ctx.createLinearGradient(0, this.vpY, 0, this.logicalHeight);
-        floorGrad.addColorStop(0, '#090503');
-        floorGrad.addColorStop(0.3, '#0E0B0A');
-        floorGrad.addColorStop(1, '#1A1816');
+        floorGrad.addColorStop(0, '#060B06');
+        floorGrad.addColorStop(0.3, '#0A140B');
+        floorGrad.addColorStop(1, '#112213');
         this.ctx.fillStyle = floorGrad;
         this.ctx.fillRect(0, this.vpY, this.logicalWidth, this.logicalHeight - this.vpY);
 
         const ceilingGrad = this.ctx.createLinearGradient(0, 0, 0, this.vpY);
-        ceilingGrad.addColorStop(0, '#060302');
-        ceilingGrad.addColorStop(1, '#090503');
+        ceilingGrad.addColorStop(0, '#030503');
+        ceilingGrad.addColorStop(1, '#060B06');
         this.ctx.fillStyle = ceilingGrad;
         this.ctx.fillRect(0, 0, this.logicalWidth, this.vpY);
 
-        // Floor perspective grid lines (Longitudinal)
-        this.ctx.strokeStyle = '#27272A';
+        // Soil grid paths (Longitudinal)
+        this.ctx.strokeStyle = '#162e1a';
         this.ctx.lineWidth = 1;
         
         const numGridLines = 10;
@@ -406,7 +401,7 @@ class RobotAnimation {
             this.ctx.stroke();
         }
 
-        // Floor grid lines (Transverse - exponential spacing)
+        // Soil paths (Transverse - exponential spacing)
         const numTransverse = 8;
         for (let i = 0; i <= numTransverse; i++) {
             const t = i / numTransverse;
@@ -417,120 +412,84 @@ class RobotAnimation {
             this.ctx.stroke();
         }
 
-        // Draw Racks/Shelves on Left and Right sides in perspective
-        const drawRackSide = (isLeft) => {
+        // Draw leafy crop rows/plants on Left and Right in perspective
+        const drawCropsSide = (isLeft) => {
             const dir = isLeft ? -1 : 1;
-            const rackColor = '#B45309'; // Amber industrial post color
-            this.ctx.strokeStyle = rackColor;
-
-            const floorX = (z) => this.vpX + dir * (35 + 230 * z);
-            const floorY = (z) => this.vpY + (this.logicalHeight * 0.95 - this.vpY) * z;
-            const topX = (z) => this.vpX + dir * (35 + 230 * z);
-            const topY = (z) => this.vpY - 20 - 140 * z;
-
             const zIntervals = [0.15, 0.35, 0.55, 0.75, 0.95];
-            
-            // Outer guide frames
-            this.ctx.lineWidth = 1.5;
-            this.ctx.beginPath();
-            this.ctx.moveTo(floorX(zIntervals[0]), floorY(zIntervals[0]));
-            for (let k = 1; k < zIntervals.length; k++) {
-                this.ctx.lineTo(floorX(zIntervals[k]), floorY(zIntervals[k]));
-            }
-            this.ctx.stroke();
 
-            this.ctx.beginPath();
-            this.ctx.moveTo(topX(zIntervals[0]), topY(zIntervals[0]));
-            for (let k = 1; k < zIntervals.length; k++) {
-                this.ctx.lineTo(topX(zIntervals[k]), topY(zIntervals[k]));
-            }
-            this.ctx.stroke();
+            const plantX = (z) => this.vpX + dir * (35 + 230 * z);
+            const floorY = (z) => this.vpY + (this.logicalHeight * 0.95 - this.vpY) * z;
 
-            // Intermediate shelves
-            const numShelves = 2;
-            for (let s = 1; s <= numShelves; s++) {
-                const shRatio = s / (numShelves + 1);
-                this.ctx.beginPath();
-                this.ctx.moveTo(
-                    floorX(zIntervals[0]),
-                    floorY(zIntervals[0]) + (topY(zIntervals[0]) - floorY(zIntervals[0])) * shRatio
-                );
-                for (let k = 1; k < zIntervals.length; k++) {
-                    this.ctx.lineTo(
-                        floorX(zIntervals[k]),
-                        floorY(zIntervals[k]) + (topY(zIntervals[k]) - floorY(zIntervals[k])) * shRatio
-                    );
-                }
-                this.ctx.stroke();
-            }
-
-            // Vertical rack pillars and inner cross braces
-            zIntervals.forEach((z) => {
-                const fx = floorX(z);
-                const fy = floorY(z);
-                const tx = topX(z);
-                const ty = topY(z);
-                
-                this.ctx.strokeStyle = rackColor;
-                this.ctx.lineWidth = 2 * z;
-                this.ctx.beginPath();
-                this.ctx.moveTo(fx, fy);
-                this.ctx.lineTo(tx, ty);
-                this.ctx.stroke();
-
-                // Cross bracing
-                this.ctx.strokeStyle = '#3F3F46';
-                this.ctx.lineWidth = 0.8 * z;
-                this.ctx.beginPath();
-                this.ctx.moveTo(fx, fy);
-                this.ctx.lineTo(tx, fy + (ty - fy) * 0.5);
-                this.ctx.lineTo(fx, ty);
-                this.ctx.stroke();
-            });
-
-            // Draw storage boxes on the shelves
             zIntervals.forEach((z, idx) => {
-                if (idx === zIntervals.length - 1) return; // Hide foreground pillar overlap
+                const px = plantX(z);
+                const py = floorY(z);
                 const scale = z;
-                const fx = floorX(z);
-                const fy = floorY(z);
-                const ty = topY(z);
 
-                const boxColors = ['#52525B', '#1E3A8A', '#581C87', '#065F46'];
-                for (let s = 1; s <= numShelves; s++) {
-                    const shRatio = s / (numShelves + 1);
-                    const shelfY = fy + (ty - fy) * shRatio;
-                    
-                    const boxW = 14 * scale;
-                    const boxH = 11 * scale;
-                    const bx = fx + dir * (10 * scale);
-                    const by = shelfY - boxH;
+                // 1. Draw plant stalk/stem
+                this.ctx.strokeStyle = '#451A03';
+                this.ctx.lineWidth = 3.5 * scale;
+                this.ctx.beginPath();
+                this.ctx.moveTo(px, py);
+                this.ctx.lineTo(px, py - 35 * scale);
+                this.ctx.stroke();
 
-                    this.ctx.fillStyle = boxColors[(idx + s) % boxColors.length];
-                    this.ctx.fillRect(bx - boxW/2, by, boxW, boxH);
-                    this.ctx.strokeStyle = '#18181B';
-                    this.ctx.lineWidth = 0.8 * scale;
-                    this.ctx.strokeRect(bx - boxW/2, by, boxW, boxH);
+                // 2. Draw green canopy leaf clumps
+                this.ctx.fillStyle = '#15803D';
+                this.ctx.beginPath();
+                this.ctx.arc(px, py - 35 * scale, 15 * scale, 0, Math.PI * 2);
+                this.ctx.arc(px - 10 * scale, py - 43 * scale, 11 * scale, 0, Math.PI * 2);
+                this.ctx.arc(px + 10 * scale, py - 43 * scale, 11 * scale, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = '#166534'; // Shadow overlay
+                this.ctx.beginPath();
+                this.ctx.arc(px - 5 * scale, py - 30 * scale, 8 * scale, 0, Math.PI * 2);
+                this.ctx.arc(px + 5 * scale, py - 30 * scale, 8 * scale, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                // 3. Draw static red fruits hanging (skip foreground)
+                if (idx === zIntervals.length - 1) return;
+
+                // Supply fruit is placed specifically in background Left
+                if (isLeft && idx === 1 && this.state !== 1) {
+                    // Handled in main draw loop
+                    return;
                 }
+
+                this.ctx.fillStyle = this.colors.red;
+                this.ctx.strokeStyle = '#FFFFFF';
+                this.ctx.lineWidth = 0.5 * scale;
+                
+                // Hanging Fruit 1
+                this.ctx.beginPath();
+                this.ctx.arc(px - 6 * scale, py - 28 * scale, 3 * scale, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.stroke();
+
+                // Hanging Fruit 2
+                this.ctx.beginPath();
+                this.ctx.arc(px + 8 * scale, py - 34 * scale, 3 * scale, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.stroke();
             });
         };
 
-        drawRackSide(true);  // Left Warehouse Rack
-        drawRackSide(false); // Right Warehouse Rack
+        drawCropsSide(true);
+        drawCropsSide(false);
 
-        // High-bay warehouse ceiling lights
-        const lights = [0.2, 0.4, 0.6, 0.8];
-        lights.forEach((z) => {
+        // Smart hydroponic arched struts vaulting ceiling
+        this.ctx.strokeStyle = 'rgba(6, 182, 212, 0.15)';
+        this.ctx.lineWidth = 1;
+        const arches = [0.2, 0.4, 0.6, 0.8];
+        arches.forEach((z) => {
             const scale = z;
-            const ly = this.vpY - 45 - 80 * z;
-            const lw = 28 * scale;
-            const lh = 4 * scale;
-            
-            this.ctx.fillStyle = 'rgba(251, 191, 36, 0.85)';
-            this.ctx.shadowColor = 'rgba(251, 191, 36, 0.7)';
-            this.ctx.shadowBlur = 12 * scale;
-            this.ctx.fillRect(this.vpX - lw/2, ly, lw, lh);
-            this.ctx.shadowBlur = 0; // Reset
+            const hY = this.vpY + (this.logicalHeight * 0.95 - this.vpY) * z;
+            const wX = this.vpX;
+            const rVal = (35 + 230 * z);
+
+            this.ctx.beginPath();
+            this.ctx.ellipse(wX, hY - 60 * scale, rVal, 100 * scale, 0, Math.PI, 0);
+            this.ctx.stroke();
         });
     }
 
@@ -539,7 +498,7 @@ class RobotAnimation {
         this.ctx.translate(cx, cy);
         this.ctx.rotate(angle);
 
-        // Outer rubber tire
+        // Outer Tire
         this.ctx.fillStyle = '#1C1917';
         this.ctx.beginPath();
         this.ctx.arc(0, 0, r, 0, Math.PI * 2);
@@ -552,7 +511,7 @@ class RobotAnimation {
         this.ctx.arc(0, 0, r - 3 * scale, 0, Math.PI * 2);
         this.ctx.stroke();
 
-        // Glowing cyan spokes
+        // Spokes
         this.ctx.strokeStyle = this.colors.cyan;
         this.ctx.lineWidth = 1.0 * scale;
         for (let i = 0; i < 4; i++) {
@@ -563,7 +522,7 @@ class RobotAnimation {
             this.ctx.stroke();
         }
 
-        // Metal center hub
+        // Hub Cap
         this.ctx.fillStyle = '#A8A29E';
         this.ctx.beginPath();
         this.ctx.arc(0, 0, 3 * scale, 0, Math.PI * 2);
@@ -579,7 +538,7 @@ class RobotAnimation {
         const chassisH = 22 * scale;
         const chassisY = floorY - 14 * scale - chassisH;
 
-        // 1. Draw Rear Wheels (drawn behind chassis for 3D layout)
+        // 1. Draw Rear Wheels (behind chassis)
         const rearY = floorY - 16 * scale;
         this.drawWheel(this.vpX - 21 * scale, rearY, 7.5 * scale, this.wheelAngle, scale);
         this.drawWheel(this.vpX + 21 * scale, rearY, 7.5 * scale, this.wheelAngle, scale);
@@ -594,7 +553,7 @@ class RobotAnimation {
         this.ctx.fill();
         this.ctx.stroke();
 
-        // Glowing center engine/battery core
+        // Glowing center core
         const corePulse = (2 + Math.abs(Math.sin(Date.now() / 150)) * 2) * scale;
         this.ctx.shadowColor = this.colors.cyan;
         this.ctx.shadowBlur = 8 * scale;
@@ -604,18 +563,18 @@ class RobotAnimation {
         this.ctx.fill();
         this.ctx.shadowBlur = 0; // Reset
 
-        // BRAND Label (FEAR Robot)
+        // Brand tag
         this.ctx.font = `700 ${Math.max(4, 7 * scale)}px monospace`;
         this.ctx.fillStyle = '#FFFFFF';
         this.ctx.textAlign = 'center';
         this.ctx.fillText('FEAR', this.vpX, chassisY + 8 * scale);
 
-        // 3. Draw Front Wheels (drawn in front of chassis for depth)
+        // 3. Draw Front Wheels (in front of chassis)
         const frontY = floorY - 10 * scale;
         this.drawWheel(this.vpX - 26 * scale, frontY, 11 * scale, this.wheelAngle, scale);
         this.drawWheel(this.vpX + 26 * scale, frontY, 11 * scale, this.wheelAngle, scale);
 
-        // 4. Draw Arms (Mounted on top panel of chassis)
+        // 4. Draw Arms
         const armBaseY = chassisY + 4 * scale;
         this.drawArm(this.leftArm, this.vpX - 16 * scale, armBaseY, this.colors.cyan, scale);
         this.drawArm(this.rightArm, this.vpX + 16 * scale, armBaseY, this.colors.purple, scale);
@@ -633,7 +592,7 @@ class RobotAnimation {
         this.ctx.fill();
         this.ctx.stroke();
 
-        // Shoulder to Elbow
+        // Shoulder to Elbow Segment
         this.ctx.strokeStyle = '#3F3F46';
         this.ctx.lineWidth = 7 * scale;
         this.ctx.lineCap = 'round';
@@ -658,7 +617,7 @@ class RobotAnimation {
         this.ctx.fill();
         this.ctx.stroke();
 
-        // Elbow to Wrist
+        // Elbow to Wrist Segment
         this.ctx.strokeStyle = '#27272A';
         this.ctx.lineWidth = 4.5 * scale;
         this.ctx.beginPath();
@@ -673,7 +632,7 @@ class RobotAnimation {
         this.ctx.lineTo(joints.x2, joints.y2);
         this.ctx.stroke();
 
-        // Gripper claw
+        // Gripper claws
         const handAngle = arm.theta1 + arm.theta2;
         const gripSize = 8 * scale;
         const fAngle = arm.gripperOpen ? 0.38 : 0.12;
@@ -681,7 +640,7 @@ class RobotAnimation {
         this.ctx.strokeStyle = accentColor;
         this.ctx.lineWidth = 2 * scale;
         
-        // Upper Finger
+        // Upper Claw
         this.ctx.beginPath();
         this.ctx.moveTo(joints.x2, joints.y2);
         this.ctx.lineTo(
@@ -690,7 +649,7 @@ class RobotAnimation {
         );
         this.ctx.stroke();
 
-        // Lower Finger
+        // Lower Claw
         this.ctx.beginPath();
         this.ctx.moveTo(joints.x2, joints.y2);
         this.ctx.lineTo(
@@ -707,49 +666,109 @@ class RobotAnimation {
 
         const size = this.cubeSize * scale;
 
-        // Cube Fill
+        // Draw round fruit shape
         this.ctx.fillStyle = color;
         this.ctx.shadowColor = color;
         this.ctx.shadowBlur = 6 * scale;
-        this.ctx.fillRect(-size / 2, -size / 2, size, size);
+        this.ctx.beginPath();
+        this.ctx.arc(0, 0, size/2, 0, Math.PI * 2);
+        this.ctx.fill();
 
-        // Cube Border Highlight
+        // Fruit highlight highlight/reflection
         this.ctx.strokeStyle = '#FFFFFF';
-        this.ctx.lineWidth = 1.5 * scale;
+        this.ctx.lineWidth = 1.0 * scale;
         this.ctx.shadowBlur = 0;
-        this.ctx.strokeRect(-size / 2, -size / 2, size, size);
+        this.ctx.stroke();
+
+        // Draw small leaf/stalk on fruit
+        this.ctx.strokeStyle = '#15803D';
+        this.ctx.lineWidth = 1.5 * scale;
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, -size/2);
+        this.ctx.quadraticCurveTo(-2 * scale, -size/2 - 3 * scale, -4 * scale, -size/2 - 1 * scale);
+        this.ctx.stroke();
 
         this.ctx.restore();
+    }
+
+    drawCrate(cx, cy, scale) {
+        const w = 34 * scale;
+        const h = 18 * scale;
+        
+        // Draw wood slats crate
+        this.ctx.fillStyle = '#78350F'; // Wood brown
+        this.ctx.strokeStyle = '#D97706'; // Amber outline
+        this.ctx.lineWidth = 1.5 * scale;
+
+        this.ctx.beginPath();
+        this.ctx.rect(cx - w/2, cy, w, h);
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        // Horizontal slat divisions
+        this.ctx.beginPath();
+        this.ctx.moveTo(cx - w/2, cy + h * 0.35);
+        this.ctx.lineTo(cx + w/2, cy + h * 0.35);
+        this.ctx.moveTo(cx - w/2, cy + h * 0.7);
+        this.ctx.lineTo(cx + w/2, cy + h * 0.7);
+        this.ctx.strokeStyle = '#451A03';
+        this.ctx.lineWidth = 1.0 * scale;
+        this.ctx.stroke();
+
+        // BRAND label
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        this.ctx.font = `600 ${Math.max(3, 5 * scale)}px sans-serif`;
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('CROP', cx, cy + h - 3 * scale);
+    }
+
+    drawFruitsInCrate(cx, cy, count, scale) {
+        const fr = 4.0 * scale;
+        
+        // Coordinates of fruits inside the box
+        const positions = [
+            { dx: -7 * scale, dy: 13 * scale },
+            { dx: 6 * scale, dy: 13 * scale },
+            { dx: -1 * scale, dy: 6 * scale }
+        ];
+
+        for (let i = 0; i < count; i++) {
+            if (i >= positions.length) break;
+            const px = cx + positions[i].dx;
+            const py = cy + positions[i].dy;
+            
+            this.ctx.save();
+            this.ctx.translate(px, py);
+            this.ctx.fillStyle = this.colors.red;
+            this.ctx.strokeStyle = '#FFFFFF';
+            this.ctx.lineWidth = 0.8 * scale;
+            this.ctx.beginPath();
+            this.ctx.arc(0, 0, fr, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.stroke();
+            this.ctx.restore();
+        }
     }
 
     draw() {
         this.ctx.clearRect(0, 0, this.logicalWidth, this.logicalHeight);
 
-        // 1. Draw Warehouse Background
-        this.drawWarehouse();
+        // 1. Draw Farming Scene (soil, canopy row)
+        this.drawFarmingScene();
 
-        // 2. Draw Pickup shelf platform (Left side background)
-        const scalePick = this.zPick;
-        this.ctx.fillStyle = '#18181B';
-        this.ctx.strokeStyle = this.colors.border;
-        this.ctx.lineWidth = 1.5 * scalePick;
-        this.ctx.beginPath();
-        this.ctx.roundRect(this.supplyX - 25 * scalePick, this.supplyY + 6 * scalePick, 50 * scalePick, 4 * scalePick, 1);
-        this.ctx.fill();
-        this.ctx.stroke();
-
-        // 3. Draw Placement pallet platform (Right side foreground)
+        // 2. Draw Harvest Crate Bin (Right side foreground)
         const scaleDrop = this.zDrop;
-        this.ctx.fillStyle = '#18181B';
-        this.ctx.strokeStyle = this.colors.border;
-        this.ctx.lineWidth = 1.5 * scaleDrop;
-        this.ctx.beginPath();
-        this.ctx.roundRect(this.stackX - 25 * scaleDrop, this.stackBaseY + 6 * scaleDrop, 50 * scaleDrop, 4 * scaleDrop, 1);
-        this.ctx.fill();
-        this.ctx.stroke();
+        let crateOpacity = 1.0;
+        if (this.state === 5 && this.stackCount >= 3) {
+            crateOpacity = Math.max(0.3, 1.0 - (this.timer / 50));
+        }
+        this.ctx.globalAlpha = crateOpacity;
+        this.drawCrate(this.boxX, this.boxY, scaleDrop);
+        this.drawFruitsInCrate(this.boxX, this.boxY, this.stackCount, scaleDrop);
+        this.ctx.globalAlpha = 1.0; // Reset
 
-        // 4. Draw dust particles
-        this.ctx.fillStyle = '#4B5563';
+        // 3. Draw dust particles
+        this.ctx.fillStyle = '#3F6212'; // green-ish dirt particles
         this.particles.forEach((p) => {
             this.ctx.globalAlpha = p.alpha;
             this.ctx.beginPath();
@@ -758,26 +777,17 @@ class RobotAnimation {
         });
         this.ctx.globalAlpha = 1.0; // Reset
 
-        // 5. Draw Robot (with wheels, chassis, arms)
+        // 4. Draw Robot
         this.drawRobot();
 
-        // 6. Draw stacked cubes in foreground
-        this.cubes.forEach((cube) => {
-            let opacity = 1.0;
-            if (this.state === 5 && this.stackCount >= 3) {
-                opacity = Math.max(0, 1.0 - (this.timer / 45));
-            }
-            this.drawCube(cube.x, cube.y, cube.color, opacity, cube.scale);
-        });
-
-        // 7. Draw current cube carried by gripper
+        // 5. Draw current fruit carried by gripper
         if (this.currentCube) {
             this.drawCube(this.currentCube.x, this.currentCube.y, this.currentCube.color, 1.0, this.z);
         }
 
-        // 8. Draw supply cube on pickup shelf if not currently being grabbed
+        // 6. Draw supply fruit hanging in background Left if not grabbed
         if (this.state !== 1) {
-            this.drawCube(this.supplyX, this.supplyY, this.colors.orange, 1.0, this.zPick);
+            this.drawCube(this.supplyX, this.supplyY, this.colors.red, 1.0, this.zPick);
         }
     }
 
