@@ -1406,11 +1406,11 @@ img {
     100% { background-position: 0% -200%; }
 }
 
-.visual-img {
+.visual-canvas {
     width: 100%;
-    height: auto;
-    object-fit: cover;
+    height: 280px;
     display: block;
+    background: var(--bg-deep);
 }
 
 .visual-label {
