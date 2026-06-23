@@ -132,6 +132,19 @@ class RobotAnimation {
         return { x1, y1, x2, y2 };
     }
 
+    drawRoundRect(x, y, w, h, r) {
+        if (typeof r === 'undefined') r = 0;
+        if (w < 2 * r) r = w / 2;
+        if (h < 2 * r) r = h / 2;
+        this.ctx.beginPath();
+        this.ctx.moveTo(x + r, y);
+        this.ctx.arcTo(x + w, y, x + w, y + h, r);
+        this.ctx.arcTo(x + w, y + h, x, y + h, r);
+        this.ctx.arcTo(x, y + h, x, y, r);
+        this.ctx.arcTo(x, y, x + w, y, r);
+        this.ctx.closePath();
+    }
+
     setArmTargets(ltx, lty, rtx, rty) {
         const chassisY = this.floorY - 32;
         const armBaseY = chassisY + 4;
@@ -420,8 +433,7 @@ class RobotAnimation {
         this.ctx.strokeStyle = this.colors.purple;
         this.ctx.lineWidth = 1.5;
         
-        this.ctx.beginPath();
-        this.ctx.roundRect(this.robotX - chassisW/2, chassisY, chassisW, chassisH, 5);
+        this.drawRoundRect(this.robotX - chassisW/2, chassisY, chassisW, chassisH, 5);
         this.ctx.fill();
         this.ctx.stroke();
 
