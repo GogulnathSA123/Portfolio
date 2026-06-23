@@ -393,7 +393,7 @@ class RobotAnimation {
         this.ctx.strokeStyle = '#57534E';
         this.ctx.lineWidth = 1.5;
         this.ctx.beginPath();
-        this.ctx.arc(0, 0, r - 3);
+        this.ctx.arc(0, 0, r - 3, 0, Math.PI * 2);
         this.ctx.stroke();
 
         // Glowing cyan spokes
