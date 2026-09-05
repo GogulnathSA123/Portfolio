@@ -84,6 +84,7 @@ navMenu.querySelectorAll('a').forEach((link) => {
 const typingElement = document.getElementById('typingText');
 const phrases = [
     'I build autonomous robotic systems.',
+    'I deploy RoboMamba-DINO-ACT manipulation policies.',
     'I explore vision-language-action models.',
     'I develop intelligent embodied agents.',
     'I fuse sensors with Bayesian inference.',

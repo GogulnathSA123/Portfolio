@@ -142,15 +142,56 @@
             <h2 class="section-title reveal"><span class="section-number">03.</span> Featured Projects</h2>
             <div class="projects-grid reveal-stagger">
 
-                <!-- Project 1: VLA in HITL (MSc Research Project) -->
+                <!-- Project 1: RoboMamba-DINO-ACT Policy (Real-World Manipulation) -->
+                <div class="project-card">
+                    <div class="project-image project-video-wrapper">
+                        <video
+                            class="project-video"
+                            src="assets/robomamba_dino_act_manipulation.mp4"
+                            autoplay
+                            muted
+                            loop
+                            playsinline
+                            controls
+                        ></video>
+                    </div>
+                    <div class="project-content">
+                        <h3 class="project-title">RoboMamba-DINO-ACT: Vision-Action Manipulation Policy</h3>
+                        <p class="project-description">
+                            End-to-end vision-action policy deployed on a physical 6-DoF SO-101 robotic arm performing autonomous pick-and-place manipulation. Couples Meta AI's self-supervised <strong>DINOv2</strong> (<code>dinov2_vits14</code>) vision backbone for spatial patch representation, a <strong>RoboMamba</strong> State Space Model (SSM) sequence encoder with $\mathcal{O}(N)$ linear complexity for low-latency temporal inference, and an <strong>ACT (Action Chunking with Transformers)</strong> CVAE decoder predicting multi-step action trajectories ($T=16$) to eliminate compounding error during real-time hardware execution.
+                        </p>
+                        <div class="project-tags">
+                            <span class="tag">RoboMamba</span>
+                            <span class="tag">DINOv2</span>
+                            <span class="tag">ACT Policy</span>
+                            <span class="tag">SO-101 Arm</span>
+                            <span class="tag">Imitation Learning</span>
+                            <span class="tag">State Space Models</span>
+                            <span class="tag">PyTorch</span>
+                            <span class="tag">Embodied AI</span>
+                        </div>
+                        <div class="project-links">
+                            <a href="https://github.com/GogulnathSA123/RoboMamba_DINO_ACT_Policy" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                                <span>View Repo</span>
+                            </a>
+                            <a href="assets/DINOv2_RoboMamba_ACT_Architecture_Guide.pdf" target="_blank" rel="noopener noreferrer" class="project-link">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                <span>Architecture Guide</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 2: VLA in Isaac Sim (MSc Research Project) -->
                 <div class="project-card">
                     <div class="project-image">
                         <img src="assets/vla_simulation.jpg" alt="Robotic Arm training in Nvidia Isaac Sim" class="project-img">
                     </div>
                     <div class="project-content">
-                        <h3 class="project-title">Vision-Language-Action in Hardware-in-the-Loop</h3>
+                        <h3 class="project-title">Vision-Language-Action: Isaac Sim Policy Learning</h3>
                         <p class="project-description">
-                            Ongoing MSc Research Project designing an end-to-end pipeline architecture to deploy Vision-Language-Action (VLA) models onto a physical SO-101 robot arm. Implements reinforcement learning in Nvidia Isaac Sim/Isaac Lab, trained an Action Chunking with Transformers (ACT) policy with a custom task, and exploring State-Space Systems (Mamba) and Robomamba for latency optimization.
+                            Ongoing MSc Research Project designing an end-to-end pipeline architecture to deploy Vision-Language-Action (VLA) models onto a robotic manipulator. Implements reinforcement learning and imitation policies in Nvidia Isaac Sim / Isaac Lab, training an Action Chunking with Transformers (ACT) policy with custom tasks, and exploring State-Space Systems (Mamba) and RoboMamba for latency optimization.
                         </p>
                         <div class="project-tags">
                             <span class="tag">Python</span>
@@ -171,7 +212,7 @@
                     </div>
                 </div>
 
-                <!-- Project 2: Robot Learning Control (DMPs & GMR) -->
+                <!-- Project 3: Robot Learning Control (DMPs & GMR) -->
                 <div class="project-card">
                     <div class="project-image">
                         <img src="assets/robot_learning_dmp.jpg" alt="KUKA Robot arm tracking generalized trajectory" class="project-img">
@@ -199,7 +240,7 @@
                     </div>
                 </div>
 
-                <!-- Project 3: NAO HRI Study -->
+                <!-- Project 4: NAO HRI Study -->
                 <div class="project-card">
                     <div class="project-image">
                         <img src="assets/nao_hri_study.jpg" alt="NAO humanoid robot pointing at navigation target" class="project-img">
@@ -226,7 +267,7 @@
                     </div>
                 </div>
 
-                <!-- Project 4: Indoor Drone Localization -->
+                <!-- Project 5: Indoor Drone Localization -->
                 <div class="project-card">
                     <div class="project-image">
                         <img src="assets/drone_localization.jpg" alt="Drone hovering inside robotics lab with ArUco markers" class="project-img">
@@ -248,7 +289,7 @@
                     </div>
                 </div>
 
-                <!-- Project 5: Bayesian Leader-Follower Robot -->
+                <!-- Project 6: Bayesian Leader-Follower Robot -->
                 <div class="project-card">
                     <div class="project-image">
                         <img src="assets/0J11370.600.webp" alt="Turtlebot Leader and Follower" class="project-img">
@@ -275,7 +316,7 @@
                     </div>
                 </div>
 
-                <!-- Project 6: Apple Detection SVM -->
+                <!-- Project 7: Apple Detection SVM -->
                 <div class="project-card">
                     <div class="project-image">
                         <img src="https://github.com/user-attachments/assets/73ef524a-b9a9-4e24-8d20-9036f5759538" alt="Apple Detection results showing bounding boxes around detected apples" class="project-img">
@@ -302,37 +343,6 @@
                     </div>
                 </div>
 
-                <!-- Project 7: VLA Hardware-in-the-Loop -->
-                <div class="project-card">
-                    <div class="project-image project-video-wrapper">
-                        <video
-                            class="project-video"
-                            src="assets/vla_hil_demo.mp4"
-                            autoplay
-                            muted
-                            loop
-                            playsinline
-                            controls
-                        ></video>
-                    </div>
-                    <div class="project-content">
-                        <h3 class="project-title">Vision-Language-Action in Hardware-in-the-Loop</h3>
-                        <p class="project-description">
-                            Deployed a Vision-Language-Action (VLA) model on a physical SO-101 leader-follower robotic arm system using a Hardware-in-the-Loop (HIL) setup. The policy — trained via imitation learning with the LeRobot framework — receives live camera observations and outputs joint commands in real time, demonstrating end-to-end embodied AI on physical hardware.
-                        </p>
-                        <div class="project-tags">
-                            <span class="tag">VLA</span>
-                            <span class="tag">LeRobot</span>
-                            <span class="tag">SO-101</span>
-                            <span class="tag">Imitation Learning</span>
-                            <span class="tag">Hardware-in-the-Loop</span>
-                            <span class="tag">PyTorch</span>
-                            <span class="tag">Embodied AI</span>
-                        </div>
-                        <div class="project-links">
-                        </div>
-                    </div>
-                </div>
 
             </div>
         </div>
